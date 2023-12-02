@@ -36,14 +36,29 @@ function loadData(){
 // Use D3 to fetch the JSON data
 d3.json(jsonUrl)
   .then(function(data) {
-    // Handle the data here
-    console.log(data);
 
      // Dropdown selection
      const dropdown = d3.select("#selDataset");
 
     // Assign the value of the dropdown menu option to a variable
     let dataset = dropdown.property("value");
+
+    //Demographic
+    let metaData=data.metadata.find(x=>x.id.toString()===dataset);// Access the 'metadata' property
+  
+    // Get the sample-metadata element
+    const metadataElement = document.getElementById('sample-metadata');
+
+    // Clear previous content
+    metadataElement.innerHTML = '';
+
+    // Update the HTML content with demographic information
+    for (const key in metaData) {
+      const value = metaData[key];
+      const pElement = document.createElement('p');
+      pElement.textContent = `${key}: ${value}`;
+      metadataElement.appendChild(pElement);
+    }
 
     // Use the data for further processing
     let samples = data.samples.find(x=>x.id===dataset); // Access the 'samples' property
@@ -64,9 +79,8 @@ d3.json(jsonUrl)
       orientation:'h'
     };
     Plotly.newPlot('plot',[trace],{displayModeBar : false});
-console.log(topTen)
 
-    // Set up the bubble chart dimensions
+    // Set up the bubble chart
     let bubbleTrace={
       x:samples.otu_ids,
       y:samples.sample_values,
@@ -82,14 +96,69 @@ console.log(topTen)
     
     var layout = {
       showlegend: false,
-      height: 400,
+      height: 500,
       width: 1200,
       xaxis: {
         title: 'OTU ID'  // Updated x-axis label
       }
     };
 
-    Plotly.newPlot('bubble', [bubbleTrace], layout);
+    if(samples.otu_ids.length > 1){
+      Plotly.newPlot('bubble', [bubbleTrace], layout);
+    } else {
+      const bubbleElement = document.getElementById('bubble');
+      bubbleElement.innerHTML = 
+      '<p style="font-weight: bold; font-size: 20px; text-align: center;">Not enough data to create a bubble chart!!!</p>';
+    }
+    
+    // Set up the gauge chart
+    const gradientColors = [
+      "rgb(144,238,144)",
+      "rgb(107,209,107)",
+      "rgb(60,179,60)",
+      "rgb(0,128,0)",
+      "rgb(0,100,0)",
+      "rgb(0,80,0)",
+      "rgb(0,60,0)",
+      "rgb(0,40,0)",
+      "rgb(0,20,0)"  // Dark green
+    ];
+    
+    // Create steps for the gauge chart with the gradient
+    let gaugeSteps = [];
+    for (let i = 1; i <= 9; i++) {
+      gaugeSteps.push({
+        range: [i - 1, i],
+        color: gradientColors[i - 1],
+        label: i + '-' + (i + 1) 
+      });
+    }
+
+    let gaugeTrace={
+      value: metaData.wfreq,
+		  title: { text: "<b style='font-size: 30px;'>Belly Button Washing Frequency</b><br>Scrubs per Week",
+      font: { size: 20, color: "black" }},
+		  type: "indicator",
+		  mode: "gauge+number",
+      gauge: {
+        axis: { range: [0, 9], tickwidth: 1, tickcolor: "darkblue" },
+        bar: { color: "darkblue" },
+        bgcolor: "white",
+        steps: gaugeSteps,
+        threshold: {
+          line: { color: "red", width: 4 },
+          thickness: 0.75,
+          value: metaData.wfreq
+        }}
+      }
+
+    var layout = { 
+      width: 600, 
+      height: 500, 
+      margin: { t: 0, b: 0 },
+     };
+    Plotly.newPlot('gauge', [gaugeTrace], layout);
+
   })
   .catch(error => console.error("Error loading data:", error));
 
