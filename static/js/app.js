@@ -109,7 +109,7 @@ d3.json(jsonUrl)
       const bubbleElement = document.getElementById('bubble');
       bubbleElement.innerHTML = 
       '<p style="font-weight: bold; font-size: 20px; text-align: center;">Not enough data to create a bubble chart!!!</p>';
-    }
+    };
     
     // Set up the gauge chart
     const gradientColors = [
